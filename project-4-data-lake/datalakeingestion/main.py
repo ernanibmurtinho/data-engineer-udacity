@@ -20,7 +20,7 @@ def functions(argument):
     return func()
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-j', '--job',
                         type=str,
@@ -38,3 +38,7 @@ if __name__ == "__main__":
 
     dataingestion = JobDataLakeIngestion(pex_file)
     dataingestion.run()
+
+
+if __name__ == "__main__":
+    main()

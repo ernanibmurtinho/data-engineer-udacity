@@ -7,8 +7,9 @@ Let's get started with this code
 1. [Quick start](#quick-start)
 1. [Song Dataset](#Song-Dataset)
 1. [Log Dataset](#Log-Dataset)
-1. [Prepare the environment](#Prepare-the-environment)
-1. [Clean the environment](#Clean-env)
+2. [Make Pex file](#Make-pex-file)   
+2. [Run datalake ingestion](#Run-Pex-datalake-ingestion)
+2. [Prepare the environment](#Prepare-the-environment)
 
 
 ## Quick start
@@ -56,39 +57,58 @@ Sydney Youngblood Logged In Jacob M 53 Klein 238.07955 paid Tampa-St. Petersburg
 
 ```
 
-The code here, will build an architecture, to create and load the data inside a Redshift cluster.
+2. Datalake Ingestion
+
+The ingestion code, is responsible to build the datalake.
+
+* You need to have docker installed on your machine.
+* follow the instructions in this link - https://docs.docker.com/engine/install/
 
 So, to run the code, you will need to follow these steps:
-1) To create the redshift cluster, and the IAM roles and config the dwh.cfg file
-    $ %run create_structure_IaC.py
-2) To drop/create the tables inside the Redshift cluster
-    $ %run create_tables.py
-3)  To load the tables based on the files on the S3 bucket (JSON)
-    $ %run etl.py
+## Make pex file
+1) To create the pex file, add your aws keys to the config file dl.cfg, on the root
+```
+   $ make deploy
+```
+## Run Pex datalake ingestion
+2) After, you execute as below:
+```
+    $ release/datalakeingestion.pex -m datalakeingestion.main -j JobDataLakeIngestion
+```
     
-# If you have some problems with the execution, install the following requirements:
+# If you have any problems with the execution, try the following requirements(on linux ubuntu distros):
 
 ## Prepare the environment
 
 ```
-$ pip install boto3 && pip install psycopg2
+#install docker - linux ubuntu distros (linux mint in this case)
+
+# step 1
+sudo apt-get update
+
+sudo apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+
+#step 2
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+echo   "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu focal stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update
+
+#step 3
+
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io
+
+#testing install
+
+sudo docker run hello-world
+
 ```
 
-## Clean the environment
-
-At the end of the process
-
-```
-Follow the comments inside the main function, and uncomment the clean line, and comment the others, in the create_stucture_IaC.py file
-
-    #clean_redshift_cluster()
-    #clean_iam_roles()
-    
-    
-And after you comment the other lines, run it again:
-
-    $ %run create_structure_IaC.py
-    
-```
-
-##End of README
+## End of README

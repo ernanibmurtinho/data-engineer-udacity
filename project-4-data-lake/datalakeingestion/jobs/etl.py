@@ -1,10 +1,6 @@
 import configparser
-from datetime import datetime
 import os
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import udf, col
-from pyspark.sql.types import DateType, TimestampType
-from pyspark.sql.functions import year, month, dayofmonth, hour, weekofyear, date_format
 
 
 class JobDataLakeIngestion:
@@ -30,7 +26,6 @@ class JobDataLakeIngestion:
         log_data = f"{input_data}log_data/*/*/"
         song_data = f"{output_data}songs"
         users_out = f"{output_data}users"
-        artists_out = f"{output_data}artists"
         timetable_out = f"{output_data}time"
         songplaystable_out = f"{output_data}songplays"
 
@@ -58,8 +53,6 @@ class JobDataLakeIngestion:
             "weekofyear(start_date) as week", "month(start_date) as month",
             "year(start_date) as year", "dayofweek(start_date) as weekday", "artist as artist_id")
 
-        # print("count time table: ")
-        # time_table.count()
         # write time table to parquet files partitioned by year and month
         time_table.write.partitionBy("year", "artist_id").mode('overwrite').parquet(timetable_out)
 
@@ -72,13 +65,18 @@ class JobDataLakeIngestion:
         songs_join = df.join(song_df, df.song == song_df.title)
         songs_join.createOrReplaceTempView("songs")
         artists_df.createOrReplaceTempView("artists")
-        songs_join.printSchema()
-        artists_df.printSchema()
+
+        # uncoment to see the df struct
+        #songs_join.printSchema()
+        #artists_df.printSchema()
+
         songplays_table = spark.sql("""
                                 SELECT 
                                     ts as start_time, userId AS user_id, level,
                                     song_id, artists.artist_id, sessionId AS session_id, 
-                                    location, userAgent AS user_agent
+                                    location, userAgent AS user_agent,
+                                    year(start_date) as year,
+                                    month(start_date) as month
                                 FROM songs songs
                                 Inner Join artists
                                 ON artists.artist_id = songs.artist_id
@@ -86,9 +84,11 @@ class JobDataLakeIngestion:
 
         # write songplays table to parquet files partitioned by year and month
         songplays_out = songplays_table.select("start_time", "user_id", "level", "song_id", "artist_id", "session_id",
-                                               "location", "user_agent")
-        songplays_out.printSchema()
+                                               "location", "user_agent", "year", "month")
+        #uncoment to see the df struct
+        #songplays_out.printSchema()
         songplays_out.write.partitionBy("year", "month").mode('overwrite').parquet(songplaystable_out)
+
 
     def process_song_data(self, spark, input_data, output_data):
         """
@@ -98,7 +98,7 @@ class JobDataLakeIngestion:
         """
         # defining filepaths to the song_data and output files
 
-        song_data = f"{input_data}song-data/A/A/A/*.json"
+        song_data = f"{input_data}song-data/*/*/*/*.json"
         songs_out = f"{output_data}songs"
         artists_out = f"{output_data}artists"
 
@@ -108,7 +108,7 @@ class JobDataLakeIngestion:
         songs_table = df.select("song_id", "title", "artist_id", "year", "duration")
 
         # writing songs table to parquet, partitioned by year and artist_id
-        songs_table.write.partitionBy("year", "artist_id").mode('overwrite').parquet(songs_out)
+        songs_table.write.partitionBy("year", "artist_id").mode('append').parquet(songs_out)
 
         # getting the columns for artists table from song_data
         artists_table = df.selectExpr("NVL(artist_id, 0) as artist_id", "NVL(artist_name, '') AS artist_name",
@@ -163,13 +163,9 @@ class JobDataLakeIngestion:
         hadoop_conf.set("fs.s3n.awsSecretAccessKey", access_key)
 
         input_data = "s3n://udacity-dend/"
-        # output_data = "s3n://udacity-dend-out/"
-        output_data = "s3n://awsds-out/"
+        output_data = "s3n://udacity-dend-out/"
 
         print("starting process data")
         self.process_song_data(spark, input_data, output_data)
         print("starting log_data")
-        self.process_log_data(spark, input_data, output_data)
         print("ending log_data")
-
-        self.run()
