@@ -4,14 +4,6 @@ import sys
 from sys import argv
 from datalakeingestion.jobs.etl import JobDataLakeIngestion
 
-parser = argparse.ArgumentParser(description='Process datalake ingestion')
-parser.add_argument('-j', '--job',
-                    type=str,
-                    required=True,
-                    default=None,
-                    help='The name of the job you want to execute')
-
-
 def functions(argument):
     switcher = {
         'JobDataLakeIngestion': JobDataLakeIngestion
