@@ -29,34 +29,28 @@ class JobDataLakeIngestion:
         timetable_out = f"{output_data}time"
         songplaystable_out = f"{output_data}songplays"
 
-        # read log data file
         df = spark.read.json(log_data)
 
-        # filter by actions for song plays
         df = df.filter(df.page == "NextSong")
 
-        # extract columns for users table
         users_table = df.select("userId", "firstName", "lastName", "gender", "level")
 
-        # write users table to parquet files
-        users_table.write.mode('overwrite').parquet(users_out)
+        users_table.write.mode('append').parquet(users_out)
+        users_table.dropDuplicates()
 
-        # create timestamp column from original timestamp column
         df = df.selectExpr("*", "ts as start_time")
 
-        # create datetime column from original timestamp column
         df = df.selectExpr("*", "FROM_UNIXTIME(ts/1000) as start_date")
 
-        # extract columns to create time table
         time_table = df.selectExpr(
             "start_time", "hour(start_date) as hour", "day(start_date) as day",
             "weekofyear(start_date) as week", "month(start_date) as month",
             "year(start_date) as year", "dayofweek(start_date) as weekday", "artist as artist_id")
 
-        # write time table to parquet files partitioned by year and month
-        time_table.write.partitionBy("year", "artist_id").mode('overwrite').parquet(timetable_out)
+        time_table.dropDuplicates()
 
-        # read in song data to use for songplays table
+        time_table.write.partitionBy("year", "month").mode('append').parquet(timetable_out)
+
         artists_out = f"{output_data}artists"
 
         artists_df = spark.read.parquet(artists_out)
@@ -82,12 +76,14 @@ class JobDataLakeIngestion:
                                 ON artists.artist_id = songs.artist_id
                         """)
 
-        # write songplays table to parquet files partitioned by year and month
         songplays_out = songplays_table.select("start_time", "user_id", "level", "song_id", "artist_id", "session_id",
                                                "location", "user_agent", "year", "month")
         #uncoment to see the df struct
         #songplays_out.printSchema()
-        songplays_out.write.partitionBy("year", "month").mode('overwrite').parquet(songplaystable_out)
+
+        songplays_out.dropDuplicates()
+
+        songplays_out.write.partitionBy("year", "month").mode('append').parquet(songplaystable_out)
 
 
     def process_song_data(self, spark, input_data, output_data):
@@ -102,22 +98,20 @@ class JobDataLakeIngestion:
         songs_out = f"{output_data}songs"
         artists_out = f"{output_data}artists"
 
-        # read song data file
         df = spark.read.json(song_data)
 
         songs_table = df.select("song_id", "title", "artist_id", "year", "duration")
 
-        # writing songs table to parquet, partitioned by year and artist_id
+        songs_table.dropDuplicates()
+
         songs_table.write.partitionBy("year", "artist_id").mode('append').parquet(songs_out)
 
-        # getting the columns for artists table from song_data
         artists_table = df.selectExpr("NVL(artist_id, 0) as artist_id", "NVL(artist_name, '') AS artist_name",
                                       "NVL(artist_location, '') AS artist_location",
                                       "NVL(artist_latitude, 0) AS artist_latitude",
                                       "NVL(artist_longitude, 0) AS artist_longitude")
-
-        # writing the artists table
-        artists_table.write.mode('overwrite').parquet(artists_out)
+        artists_table.dropDuplicates()
+        artists_table.write.mode('append').parquet(artists_out)
 
     def init_config_aws(self):
         """
