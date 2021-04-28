@@ -5,23 +5,32 @@ from pyspark.sql import SparkSession
 
 class JobDataLakeIngestion:
     """
-    Class responsible to make the inheritance
-    of the process methods you need to run
+    Summary:
+
+    Class that contains all the etl process
     """
 
     def __init__(self, pex_file=None):
-        self.submit_args = "--conf spark.submit.deployMode=cluster --conf spark.driver.maxResultSize=0 --conf spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version=2 --conf spark.driver.memory=8G --conf spark.io.compression.snappy.blockSize=65536 --conf spark.sql.catalogImplementation=hive --conf spark.yarn.dist.files=datalakeingestion.pex --conf spark.executorEnv.PEX_ROOT=./.pex --conf spark.app.name='Datalake ingestion - process' --conf spark.submit.deployMode=client --conf spark.sql.shuffle.partitions=8 --conf spark.default.parallelism=8 --conf spark.driver.memoryOverhead=2g --conf spark.serializer=org.apache.spark.serializer.KryoSerializer --conf 'spark.executor.extraJavaOptions=-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps' --conf spark.executor.memoryOverhead=2g --conf spark.memory.fraction=0.8 --conf spark.dynamicAllocation.enabled=false --driver-cores 2 --executor-cores 2 --executor-memory 8G pyspark-shell"
+        self.submit_args = "--conf spark.submit.deployMode=cluster --conf spark.driver.maxResultSize=0 --conf spark.driver.memory=8G --conf spark.io.compression.snappy.blockSize=65536 --conf spark.sql.catalogImplementation=hive --conf spark.yarn.dist.files=datalakeingestion.pex --conf spark.executorEnv.PEX_ROOT=./.pex --conf spark.app.name='Datalake ingestion - process' --conf spark.submit.deployMode=client --conf spark.sql.shuffle.partitions=8 --conf spark.default.parallelism=8 --conf spark.driver.memoryOverhead=2g --conf spark.serializer=org.apache.spark.serializer.KryoSerializer --conf 'spark.executor.extraJavaOptions=-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps' --conf spark.executor.memoryOverhead=2g --conf spark.memory.fraction=0.8 --conf spark.dynamicAllocation.enabled=false --driver-cores 2 --executor-cores 2 --executor-memory 8G pyspark-shell "
         self.pex_file = pex_file
 
     def process_log_data(self, spark, input_data, output_data):
         """
+        Summary:
+
         Method that process the songs files and write the following tables:
         1) Users
         2) Time
         3) Songplays
-        """
-        # defining filepaths to the log_data, song_data and users_data and the file for output
 
+        Parameters:
+
+        spark (java object) - spark session function
+        input_data (varchar) - the input source file
+        output_data (varchar) - the output directory (s3) the file will be written
+        """
+
+        # defining filepaths to the log_data, song_data and users_data and the file for output
         # get filepath to log data file
         log_data = f"{input_data}log_data/*/*/"
         song_data = f"{output_data}songs"
@@ -35,8 +44,8 @@ class JobDataLakeIngestion:
 
         users_table = df.select("userId", "firstName", "lastName", "gender", "level")
 
-        users_table.write.mode('append').parquet(users_out)
         users_table.dropDuplicates()
+        users_table.write.mode('append').parquet(users_out)
 
         df = df.selectExpr("*", "ts as start_time")
 
@@ -60,9 +69,9 @@ class JobDataLakeIngestion:
         songs_join.createOrReplaceTempView("songs")
         artists_df.createOrReplaceTempView("artists")
 
-        # uncoment to see the df struct
-        #songs_join.printSchema()
-        #artists_df.printSchema()
+        # uncoment if you want to see the df struct
+        # songs_join.printSchema()
+        # artists_df.printSchema()
 
         songplays_table = spark.sql("""
                                 SELECT 
@@ -78,20 +87,28 @@ class JobDataLakeIngestion:
 
         songplays_out = songplays_table.select("start_time", "user_id", "level", "song_id", "artist_id", "session_id",
                                                "location", "user_agent", "year", "month")
-        #uncoment to see the df struct
-        #songplays_out.printSchema()
+        # uncoment to see the df struct
+        # songplays_out.printSchema()
 
         songplays_out.dropDuplicates()
 
         songplays_out.write.partitionBy("year", "month").mode('append').parquet(songplaystable_out)
 
-
     def process_song_data(self, spark, input_data, output_data):
         """
+        Summary:
+
         Method that process the songs files and write the following tables:
         1) Songs
         2) Artists
+
+        Parameters:
+
+        spark (java object) - spark session function
+        input_data (varchar) - the input source file
+        output_data (varchar) - the output directory (s3) the file will be written
         """
+
         # defining filepaths to the song_data and output files
 
         song_data = f"{input_data}song-data/*/*/*/*.json"
@@ -115,9 +132,17 @@ class JobDataLakeIngestion:
 
     def init_config_aws(self):
         """
+        Summary:
+
+        This method is only used on local environments.
+        For AWS environments, like EMR, you already have the credentials loaded for your account
+
+        Description:
+
         This method reads the config file, defined below
         you need to put the file on the root of this project
         the file example is on the readme file
+
         """
         config = configparser.ConfigParser()
         config.read('dl.cfg')
@@ -131,8 +156,15 @@ class JobDataLakeIngestion:
 
     def create_spark_session(self):
         """
-        This method creates the sparkSession with the pre defined
+
+        Summary:
+
+        This method creates the sparkSession with the pre-defined
         parameters especified below
+
+        Definition:
+
+        The spark submit envs, is defined on the beginning of this class
         """
         os.environ["PYSPARK_SUBMIT_ARGS"] = self.submit_args
         spark = SparkSession \
@@ -147,14 +179,15 @@ class JobDataLakeIngestion:
         return spark
 
     def run(self):
-        access_id, access_key = self.init_config_aws()
-        spark = self.create_spark_session()
+        # uncomment to run local
+        # access_id, access_key = self.init_config_aws()
+        # sc = spark.sparkContext
+        # hadoop_conf = sc._jsc.hadoopConfiguration()
+        # hadoop_conf.set("fs.s3n.impl", "org.apache.hadoop.fs.s3native.NativeS3FileSystem")
+        # hadoop_conf.set("fs.s3n.awsAccessKeyId", access_id)
+        # hadoop_conf.set("fs.s3n.awsSecretAccessKey", access_key)
 
-        sc = spark.sparkContext
-        hadoop_conf = sc._jsc.hadoopConfiguration()
-        hadoop_conf.set("fs.s3n.impl", "org.apache.hadoop.fs.s3native.NativeS3FileSystem")
-        hadoop_conf.set("fs.s3n.awsAccessKeyId", access_id)
-        hadoop_conf.set("fs.s3n.awsSecretAccessKey", access_key)
+        spark = self.create_spark_session()
 
         input_data = "s3n://udacity-dend/"
         output_data = "s3n://udacity-dend-out/"
