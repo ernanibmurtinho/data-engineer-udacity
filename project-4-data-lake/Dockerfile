@@ -15,15 +15,13 @@ ENV PYSPARK_PYTHON python3
 
 RUN pip3 install --upgrade pip
 
-RUN pip3 install pex pyspark==3.0.2
+RUN pip3 install pex==2.1.39 pyspark==3.0.1
 
 RUN mkdir /ingestion
 WORKDIR /ingestion
 
 COPY . /ingestion
-RUN rm -rf release
 
-RUN pip3 freeze > requirements.txt
-RUN pex . -v --disable-cache -r requirements.txt -D datalakeingestion/docs --ignore-errors -o release/datalakeingestion.pex
+RUN pex $(pip freeze) . -v --disable-cache -D datalakeingestion/docs --ignore-errors -o release/datalakeingestion.pex
 FROM scratch AS result
 COPY --from=build-stage /ingestion/release/datalakeingestion.pex .
