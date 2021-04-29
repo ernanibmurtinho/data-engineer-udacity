@@ -7,10 +7,24 @@ Let's get started with this code
 1. [Quick start](#quick-start)
 1. [Song Dataset](#Song-Dataset)
 1. [Log Dataset](#Log-Dataset)
-2. [Make Pex file](#Make-pex-file)   
+2. [Generate docker image](#Generate-docker-image)   
 2. [Run datalake ingestion](#Run-Pex-datalake-ingestion)
 2. [Prepare the environment](#Prepare-the-environment)
 
+## Summary
+
+# Project: Data Lake
+
+Introduction
+A music streaming startup, Sparkify, has grown their user base and song database even more and his old data warehouse was migrated to a data lake. Their data resides in S3, in a directory of JSON logs on user activity on the app, as well as a directory with JSON metadata on the songs in their app.
+So then, the data pipeline was constructed with the purpose of modeling and automate the data extractions, in a more flexible and powerfull way.
+
+Project Description
+In this project, I made tasks on Spark and data lakes to build an ETL pipeline and the result is a data lake hosted on S3. 
+The process steps consists in:
+* Load data from S3
+* Process the data into analytics tables using Spark
+* load them back into S3
 
 ## Quick start
 
@@ -64,16 +78,25 @@ The ingestion code, is responsible to build the datalake.
 * You need to have docker installed on your machine.
 * follow the instructions in this link - https://docs.docker.com/engine/install/
 
+* Run instructions
 So, to run the code, you will need to follow these steps:
-## Make pex file
-1) To create the pex file, add your aws keys to the config file dl.cfg, on the root
+## Generate docker image
+1) 
 ```
-   $ make deploy
+   $ make first_build
 ```
 ## Run Pex datalake ingestion
 2) After, you execute as below:
 ```
-    $ release/datalakeingestion.pex -m datalakeingestion.main -j JobDataLakeIngestion
+Go to the first line of Makefile and change the name of aws_profile or set your profile name to
+udacity
+And then, execute the command below:
+    $ make deploy_aws
+    
+This command, will Do:
+1) Push the generated image to aws ecr
+2) Copy pex to the S3 bucket
+3) Create the EMR instance and run the spark job
 ```
     
 # If you have any problems with the execution, try the following requirements(on linux ubuntu distros):
