@@ -88,7 +88,8 @@ So, to run the code, you will need to follow these steps:
 ## Run Pex datalake ingestion
 2) After, you execute as below:
 ```
-Go to the first line of Makefile and change the name of aws_profile or set your profile name to udacity
+Go to the second line of Makefile and change the name of aws_profile or set your profile name to udacity
+
 And then, execute the command below:
 
     $ make deploy_aws
