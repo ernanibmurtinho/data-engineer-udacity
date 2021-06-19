@@ -1,3 +1,12 @@
+<h1 align="center">Welcome to dataWarehouse-project-3 👋</h1>
+<p>
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.8-yellow.svg?cacheSeconds=2592000" />
+</p>
+
+> Data modelling - Data Warehouse with RedShift.
+
+### 🏠 [Homepage](https://github.com/ernanibmurtinho/data-engineer-udacity/tree/main/Project-3-DataWarehouse)
+
 # Project-3-Data-Warehouse
 Data modelling - Data Warehouse with RedShift
 
@@ -94,5 +103,17 @@ And after you comment the other lines, run it again:
     
 ```
 
-##End of README
+## Author
+
+👤 **Ernani Britto**
+
+* Website: https://www.linkedin.com/in/ernanibritto/
+* Github: [@ernanibmurtinho](https://github.com/ernanibmurtinho)
+
+## Show your support
+
+Give a ⭐️ if this project helped you!
+
+***
+_This README was generated with ❤️ by [readme-md-generator](https://github.com/kefranabg/readme-md-generator)_
 
